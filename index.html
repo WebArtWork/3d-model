@@ -761,9 +761,21 @@ renderer.domElement.addEventListener('dblclick', (e) => {
     if (!hits.length) return;
 
     const hitPoint = hits[0].point;
-    camera.position.x = hitPoint.x;
-    camera.position.z = hitPoint.z;
-    camera.position.y = hitPoint.y + eyeHeight;
+    // Відступаємо від поверхні, у яку клікнули (стіна, двері тощо), щоб не
+    // опинитись "всередині" неї — інакше колізія блокує рух у всі боки.
+    const dir = hitPoint.clone().sub(camera.position).normalize();
+    const backoff = 0.8;
+    const targetX = hitPoint.x - dir.x * backoff;
+    const targetZ = hitPoint.z - dir.z * backoff;
+
+    // Знаходимо реальну підлогу під новою точкою, а не беремо висоту точки кліку
+    // (яка могла бути на стіні чи дверях, а не на підлозі).
+    const floorHits = raycastDown(targetX, targetZ, hitPoint.y + 5, 20);
+    const floorY = floorHits.length ? floorHits[0].point.y : hitPoint.y;
+
+    camera.position.x = targetX;
+    camera.position.z = targetZ;
+    camera.position.y = floorY + eyeHeight;
     verticalVelocity = 0;
     return;
   }
