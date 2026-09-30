@@ -794,8 +794,10 @@ renderer.domElement.addEventListener('dblclick', (e) => {
     const targetZ = hitPoint.z - dir.z * backoff;
 
     // Знаходимо реальну підлогу під новою точкою, а не беремо висоту точки кліку
-    // (яка могла бути на стіні чи дверях, а не на підлозі).
-    const floorHits = raycastDown(targetX, targetZ, hitPoint.y + 5, 20);
+    // (яка могла бути на стіні чи дверях, а не на підлозі). Починаємо трохи
+    // вище точки кліку (а не з висоти всього будинку!), інакше промінь може
+    // "проскочити" крізь дах і зачепитись за нього замість підлоги кімнати.
+    const floorHits = raycastDown(targetX, targetZ, hitPoint.y + 0.5, 4);
     const floorY = floorHits.length ? floorHits[0].point.y : hitPoint.y;
 
     camera.position.x = targetX;
