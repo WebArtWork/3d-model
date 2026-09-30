@@ -285,6 +285,10 @@
       <input type="range" id="eye-height" min="0.4" max="2.2" step="0.02" value="1.7">
     </div>
     <div class="row">
+      <label>Чутливість миші</label>
+      <input type="range" id="mouse-sensitivity" min="0.2" max="3" step="0.1" value="1">
+    </div>
+    <div class="row">
       <button id="reset-view">Скинути вигляд</button>
       <button id="upload-btn" class="primary">Завантажити .glb/.gltf</button>
     </div>
@@ -370,10 +374,25 @@ let currentModel = null;
 let defaultCameraState = null;
 let collidableMeshes = [];
 
+// Дверні полотна та ручки не повинні блокувати рух — так можна пройти крізь
+// дверний проріз, навіть якщо саме полотно на 3D-моделі виглядає зачиненим.
+// Дверні рами (DoorFrame) і стіни лишаються твердими — прохід можливий лише
+// в межах самого прорізу, а не крізь стіну поруч.
+// Примітка: у цій моделі меші мають технічну назву "Object_N", а смислова
+// назва ("Door007_13" тощо) є в їхнього безпосереднього батьківського вузла.
+const NON_COLLIDABLE_NAME_RE = /^(door\d|handle)/i;
+
+function isNonCollidable(mesh) {
+  const parentName = mesh.parent && mesh.parent.name;
+  return !!parentName && NON_COLLIDABLE_NAME_RE.test(parentName);
+}
+
 function updateCollidableMeshes() {
   collidableMeshes = [];
   if (currentModel) {
-    currentModel.traverse((c) => { if (c.isMesh) collidableMeshes.push(c); });
+    currentModel.traverse((c) => {
+      if (c.isMesh && !isNonCollidable(c)) collidableMeshes.push(c);
+    });
   }
 }
 
@@ -384,6 +403,12 @@ const walkInstructionsEl = document.getElementById('walk-instructions');
 const walkInstructionsCloseEl = document.getElementById('walk-instructions-close');
 const walkToggleBtn = document.getElementById('walk-toggle');
 let walkHintDismissed = false;
+
+const mouseSensitivitySlider = document.getElementById('mouse-sensitivity');
+plControls.pointerSpeed = parseFloat(mouseSensitivitySlider.value);
+mouseSensitivitySlider.addEventListener('input', (e) => {
+  plControls.pointerSpeed = parseFloat(e.target.value);
+});
 
 walkInstructionsCloseEl.addEventListener('click', (e) => {
   e.stopPropagation();
