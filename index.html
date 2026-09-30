@@ -281,10 +281,6 @@
       <input type="range" id="exposure" min="0" max="2" step="0.05" value="1">
     </div>
     <div class="row">
-      <label>Мій зріст</label>
-      <input type="range" id="eye-height" min="0.4" max="2.2" step="0.02" value="1.7">
-    </div>
-    <div class="row">
       <label>Чутливість миші</label>
       <input type="range" id="mouse-sensitivity" min="0.2" max="3" step="0.1" value="1">
     </div>
@@ -418,7 +414,7 @@ walkInstructionsCloseEl.addEventListener('click', (e) => {
 
 let walkMode = false;
 let pointerLocked = false;
-let eyeHeight = 1.7; // зріст людини — рівень очей над підлогою (авто-підбирається під масштаб моделі)
+const eyeHeight = 1.52; // зріст людини — фіксована висота очей над підлогою, однакова у всіх кімнатах
 const walkSpeed = 2.6;
 const runSpeed = 5.2;
 const collisionRadius = 0.35;
@@ -429,13 +425,6 @@ let verticalVelocity = 0;
 const keyState = {};
 const walkRaycaster = new THREE.Raycaster();
 const clock = new THREE.Clock();
-
-const eyeHeightSlider = document.getElementById('eye-height');
-eyeHeightSlider.addEventListener('input', (e) => {
-  const feetY = camera.position.y - eyeHeight;
-  eyeHeight = parseFloat(e.target.value);
-  camera.position.y = feetY + eyeHeight;
-});
 
 window.addEventListener('keydown', (e) => { keyState[e.code] = true; });
 window.addEventListener('keyup', (e) => { keyState[e.code] = false; });
@@ -460,12 +449,6 @@ function raycastDown(x, z, fromY, maxDepth) {
   return walkRaycaster.intersectObjects(collidableMeshes, false); // відсортовано від найближчого до найдальшого
 }
 
-function raycastUp(x, z, fromY, maxDepth) {
-  walkRaycaster.set(new THREE.Vector3(x, fromY, z), new THREE.Vector3(0, 1, 0));
-  walkRaycaster.far = maxDepth;
-  return walkRaycaster.intersectObjects(collidableMeshes, false);
-}
-
 function enterWalkMode() {
   if (!currentModel) return;
   walkMode = true;
@@ -484,15 +467,6 @@ function enterWalkMode() {
   let floorY = box.min.y;
   const hits = raycastDown(center.x, center.z, box.max.y + 1, box.max.y - box.min.y + 2);
   if (hits.length) floorY = hits[hits.length - 1].point.y;
-
-  // Підбираємо зріст під реальну висоту стелі цієї кімнати (масштаб моделі
-  // може не відповідати "справжнім" метрам), щоб не почуватись велетнем/карликом.
-  const ceilingHits = raycastUp(center.x, center.z, floorY + 0.15, 20);
-  if (ceilingHits.length) {
-    const roomHeight = ceilingHits[0].point.y - floorY;
-    eyeHeight = THREE.MathUtils.clamp(roomHeight * 0.8, 0.4, 2.2);
-    eyeHeightSlider.value = eyeHeight.toFixed(2);
-  }
 
   camera.position.set(center.x, floorY + eyeHeight, center.z);
   camera.up.set(0, 1, 0);
