@@ -548,7 +548,9 @@ function updateWalk(delta) {
 
   if (moveDist > 0.0001 && collidableMeshes.length) {
     const dir = moveVec.clone().normalize();
-    const probeHeights = [-1.5, -0.7, 0.3];
+    // Висоти променів рахуємо від ніг (а не від очей), щоб колізія коректно
+    // працювала при будь-якому зрості: щиколотка, пояс, голова.
+    const probeHeights = [-eyeHeight + 0.1, -eyeHeight * 0.4, 0.2];
     let blocked = false;
     for (const h of probeHeights) {
       walkRaycaster.set(new THREE.Vector3(prevPosition.x, prevPosition.y + h, prevPosition.z), dir);
